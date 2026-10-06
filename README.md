@@ -5,7 +5,7 @@
     - ESP de Armas (gun/knife)
     - TP pra arma mais próxima
     - Speed, Fly, Noclip, Infinite Jump
-    - Hub no TOPO da tela
+    - Hub centralizado no TOPO da tela
     ═══════════════════════════════════════════════════════
 ]]
 
@@ -53,19 +53,21 @@ SG.Name="MM2Hub"; SG.ResetOnSpawn=false; SG.IgnoreGuiInset=true
 SG.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
 SG.Parent=LP:WaitForChild("PlayerGui")
 
--- Botão flutuante no TOPO
+-- Botão flutuante no topo esquerdo
 local OpenBtn=Instance.new("TextButton")
-OpenBtn.Size=UDim2.new(0,55,0,55); OpenBtn.Position=UDim2.new(0,20,0,80)
+OpenBtn.Size=UDim2.new(0,55,0,55)
+OpenBtn.Position=UDim2.new(0,20,0,20)
 OpenBtn.BackgroundColor3=T.Panel; OpenBtn.Text="🔪"; OpenBtn.TextSize=26
 OpenBtn.TextColor3=T.AccB; OpenBtn.BorderSizePixel=0; OpenBtn.ZIndex=100
 OpenBtn.Parent=SG
 Instance.new("UICorner",OpenBtn).CornerRadius=UDim.new(1,0)
 local OS=Instance.new("UIStroke",OpenBtn); OS.Color=T.Acc; OS.Thickness=2
 
--- Frame principal no TOPO CENTRO
+-- Frame principal CENTRALIZADO NO TOPO
 local Frame=Instance.new("Frame")
 Frame.Size=UDim2.new(0,440,0,500)
-Frame.Position=UDim2.new(0.5,-220,0,80)
+Frame.Position=UDim2.new(0.5,0,0,20)
+Frame.AnchorPoint=Vector2.new(0.5,0)
 Frame.BackgroundColor3=T.Bg; Frame.BorderSizePixel=0; Frame.Visible=false
 Frame.ZIndex=100; Frame.Parent=SG
 Instance.new("UICorner",Frame).CornerRadius=UDim.new(0,12)
@@ -90,7 +92,7 @@ CB.TextSize=16; CB.Font=Enum.Font.GothamBold; CB.BorderSizePixel=0
 CB.ZIndex=103; CB.Parent=TB
 Instance.new("UICorner",CB).CornerRadius=UDim.new(0,6)
 
--- Barra de status (SUA role)
+-- Barra de status
 local StatusBar=Instance.new("Frame")
 StatusBar.Size=UDim2.new(1,-20,0,32); StatusBar.Position=UDim2.new(0,10,0,50)
 StatusBar.BackgroundColor3=T.Panel; StatusBar.BorderSizePixel=0
@@ -159,7 +161,6 @@ end
 
 -- ==================== DETECTAR ROLE ====================
 local function GetPlayerRole(plr)
-    -- StringValue no Player
     for _, obj in pairs(plr:GetChildren()) do
         if obj:IsA("StringValue") then
             local n = obj.Name:lower()
@@ -174,7 +175,6 @@ local function GetPlayerRole(plr)
 
     local c = plr.Character
     if c then
-        -- Tools equipadas
         for _, tool in pairs(c:GetChildren()) do
             if tool:IsA("Tool") then
                 local tn = tool.Name:lower()
@@ -182,7 +182,6 @@ local function GetPlayerRole(plr)
                 if tn:find("gun") or tn:find("revolver") or tn:find("pistol") then return "Sheriff" end
             end
         end
-        -- Objetos com role no character
         for _, obj in pairs(c:GetChildren()) do
             if obj:IsA("StringValue") or obj:IsA("ObjectValue") then
                 local n = obj.Name:lower()
@@ -196,7 +195,6 @@ local function GetPlayerRole(plr)
         end
     end
 
-    -- Backpack
     local bp = plr:FindFirstChild("Backpack")
     if bp then
         for _, tool in pairs(bp:GetChildren()) do
@@ -519,7 +517,9 @@ end)
 
 -- ==================== NOTIFY ====================
 local N=Instance.new("TextLabel",SG)
-N.Size=UDim2.new(0,460,0,40); N.Position=UDim2.new(0.5,-230,0,20)
+N.Size=UDim2.new(0,460,0,40)
+N.Position=UDim2.new(0.5,0,0,80)
+N.AnchorPoint=Vector2.new(0.5,0)
 N.BackgroundColor3=T.Panel; N.TextColor3=T.AccB
 N.Text="🔪 MM2 HUB carregado! 🍂"
 N.TextSize=15; N.Font=Enum.Font.GothamBold; N.BorderSizePixel=0; N.ZIndex=200
