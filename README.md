@@ -1,11 +1,11 @@
 --[[
     ═══════════════════════════════════════════════════════
     🔪 MURDER MYSTERY 2 HUB  •  PURPLE EDITION
-    - ESP de Players (ver role: Murder/Sheriff/Innocent)
-    - ESP de Armas no chão (gun/knife)
+    - ESP Players com ROLE (Murder/Sheriff/Innocent)
+    - ESP de Armas (gun/knife)
     - TP pra arma mais próxima
     - Speed, Fly, Noclip, Infinite Jump
-    - Anti-AFK
+    - Hub no TOPO da tela
     ═══════════════════════════════════════════════════════
 ]]
 
@@ -15,7 +15,6 @@ local RunService       = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local TweenService     = game:GetService("TweenService")
 local Workspace        = game:GetService("Workspace")
-local ReplicatedStorage= game:GetService("ReplicatedStorage")
 
 local LP     = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
@@ -27,10 +26,8 @@ local T = {
     Acc=Color3.fromRGB(170,90,255), AccB=Color3.fromRGB(210,140,255),
     Text=Color3.fromRGB(235,220,255), Green=Color3.fromRGB(140,255,180),
     Red=Color3.fromRGB(255,90,120), Yellow=Color3.fromRGB(255,220,90),
-    Cyan=Color3.fromRGB(120,220,255),
 }
 
--- Cores das roles
 local RoleColors = {
     Murder    = Color3.fromRGB(255, 60, 60),
     Sheriff   = Color3.fromRGB(80, 150, 255),
@@ -45,10 +42,9 @@ local State = {
     Noclip=false,
     Fly=false, FlySpeed=10,
     InfJump=false,
-    ESPPlayers=false, ESPRoles=true, ESPNames=true, ESPDist=true, ESPBox=true,
+    ESPPlayers=false, ESPRoles=true, ESPNames=true, ESPDist=true,
     ESPWeapons=false,
     AntiAFK=true,
-    ShowMyRole=true,
 }
 
 -- ==================== GUI ====================
@@ -57,16 +53,19 @@ SG.Name="MM2Hub"; SG.ResetOnSpawn=false; SG.IgnoreGuiInset=true
 SG.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
 SG.Parent=LP:WaitForChild("PlayerGui")
 
+-- Botão flutuante no TOPO
 local OpenBtn=Instance.new("TextButton")
-OpenBtn.Size=UDim2.new(0,55,0,55); OpenBtn.Position=UDim2.new(0,20,0,400)
+OpenBtn.Size=UDim2.new(0,55,0,55); OpenBtn.Position=UDim2.new(0,20,0,80)
 OpenBtn.BackgroundColor3=T.Panel; OpenBtn.Text="🔪"; OpenBtn.TextSize=26
 OpenBtn.TextColor3=T.AccB; OpenBtn.BorderSizePixel=0; OpenBtn.ZIndex=100
 OpenBtn.Parent=SG
 Instance.new("UICorner",OpenBtn).CornerRadius=UDim.new(1,0)
 local OS=Instance.new("UIStroke",OpenBtn); OS.Color=T.Acc; OS.Thickness=2
 
+-- Frame principal no TOPO CENTRO
 local Frame=Instance.new("Frame")
-Frame.Size=UDim2.new(0,440,0,500); Frame.Position=UDim2.new(0.5,-220,0.5,-250)
+Frame.Size=UDim2.new(0,440,0,500)
+Frame.Position=UDim2.new(0.5,-220,0,80)
 Frame.BackgroundColor3=T.Bg; Frame.BorderSizePixel=0; Frame.Visible=false
 Frame.ZIndex=100; Frame.Parent=SG
 Instance.new("UICorner",Frame).CornerRadius=UDim.new(0,12)
@@ -91,7 +90,7 @@ CB.TextSize=16; CB.Font=Enum.Font.GothamBold; CB.BorderSizePixel=0
 CB.ZIndex=103; CB.Parent=TB
 Instance.new("UICorner",CB).CornerRadius=UDim.new(0,6)
 
--- Barra de status (mostra SUA role)
+-- Barra de status (SUA role)
 local StatusBar=Instance.new("Frame")
 StatusBar.Size=UDim2.new(1,-20,0,32); StatusBar.Position=UDim2.new(0,10,0,50)
 StatusBar.BackgroundColor3=T.Panel; StatusBar.BorderSizePixel=0
@@ -159,27 +158,31 @@ local function GetChar()
 end
 
 -- ==================== DETECTAR ROLE ====================
--- O MM2 marca a role de cada player com um "tag" no nome ou numa StringValue interna
--- Estratégia: procurar por nomes comuns de objetos que o MM2 usa
-
 local function GetPlayerRole(plr)
-    if plr == LP and State.ShowMyRole then
-        -- Tenta achar nossa role
-    end
-
-    -- Estratégia 1: procurar StringValue com role no player
+    -- StringValue no Player
     for _, obj in pairs(plr:GetChildren()) do
-        if obj:IsA("StringValue") and obj.Name:lower():find("role") then
-            local v = obj.Value:lower()
-            if v:find("murder") then return "Murder" end
-            if v:find("sheriff") then return "Sheriff" end
-            if v:find("innocent") then return "Innocent" end
+        if obj:IsA("StringValue") then
+            local n = obj.Name:lower()
+            if n:find("role") or n:find("team") then
+                local v = obj.Value:lower()
+                if v:find("murder") then return "Murder" end
+                if v:find("sheriff") then return "Sheriff" end
+                if v:find("innocent") then return "Innocent" end
+            end
         end
     end
 
-    -- Estratégia 2: procurar na Character
     local c = plr.Character
     if c then
+        -- Tools equipadas
+        for _, tool in pairs(c:GetChildren()) do
+            if tool:IsA("Tool") then
+                local tn = tool.Name:lower()
+                if tn:find("knife") then return "Murder" end
+                if tn:find("gun") or tn:find("revolver") or tn:find("pistol") then return "Sheriff" end
+            end
+        end
+        -- Objetos com role no character
         for _, obj in pairs(c:GetChildren()) do
             if obj:IsA("StringValue") or obj:IsA("ObjectValue") then
                 local n = obj.Name:lower()
@@ -191,21 +194,9 @@ local function GetPlayerRole(plr)
                 end
             end
         end
-
-        -- Estratégia 3: checa se tem knife ou gun equipado
-        local hasKnife, hasGun = false, false
-        for _, tool in pairs(c:GetChildren()) do
-            if tool:IsA("Tool") then
-                local tn = tool.Name:lower()
-                if tn:find("knife") then hasKnife = true end
-                if tn:find("gun") or tn:find("revolver") or tn:find("pistol") then hasGun = true end
-            end
-        end
-        if hasKnife then return "Murder" end
-        if hasGun then return "Sheriff" end
     end
 
-    -- Estratégia 4: backpack
+    -- Backpack
     local bp = plr:FindFirstChild("Backpack")
     if bp then
         for _, tool in pairs(bp:GetChildren()) do
@@ -227,7 +218,6 @@ local function BuildESP(plr)
     if plr == LP or ESPCache[plr] then return end
     local d = {}
 
-    -- Highlight (contorno no player)
     d.hl = Instance.new("Highlight")
     d.hl.Name = "MM2ESP"
     d.hl.Adornee = plr.Character
@@ -239,7 +229,6 @@ local function BuildESP(plr)
     d.hl.Enabled = false
     d.hl.Parent = SG
 
-    -- Billboard com nome + role + distância
     d.bg = Instance.new("BillboardGui")
     d.bg.Name = "MM2Name"
     d.bg.Size = UDim2.new(0,200,0,44)
@@ -282,18 +271,8 @@ Players.PlayerAdded:Connect(function(p)
     end)
 end)
 Players.PlayerRemoving:Connect(KillESP)
-for _, p in pairs(Players:GetPlayers()) do
-    BuildESP(p)
-    if p.Character then
-        local d = ESPCache[p]
-        if d then
-            d.hl.Adornee = p.Character
-            d.bg.Adornee = p.Character:FindFirstChild("Head") or p.Character
-        end
-    end
-end
+for _, p in pairs(Players:GetPlayers()) do BuildESP(p) end
 
--- Loop de atualização do ESP
 RunService.RenderStepped:Connect(function()
     for plr, d in pairs(ESPCache) do
         local c = plr.Character
@@ -307,7 +286,6 @@ RunService.RenderStepped:Connect(function()
                 d.bg.Adornee = head
             end
 
-            -- Detecta role
             local role = GetPlayerRole(plr)
             local color = RoleColors[role] or RoleColors.Unknown
 
@@ -317,7 +295,6 @@ RunService.RenderStepped:Connect(function()
             d.bg.Enabled = State.ESPPlayers
             d.lbl.TextColor3 = color
 
-            -- Texto
             local parts = {}
             if State.ESPNames then table.insert(parts, plr.Name) end
             if State.ESPRoles and role ~= "Unknown" then
@@ -329,7 +306,6 @@ RunService.RenderStepped:Connect(function()
             end
             d.lbl.Text = table.concat(parts, " ")
 
-            -- Cor da nossa própria role
             if plr == LP then
                 StatusLabel.Text = "🎭 SUA ROLE: "..role
                 StatusLabel.TextColor3 = color
@@ -376,7 +352,6 @@ local function RefreshWeaponESP()
     end
 end
 
--- Loop que atualiza armas (caso apareçam novas)
 spawn(function()
     while task.wait(2) do
         if State.ESPWeapons then RefreshWeaponESP() end
@@ -384,7 +359,7 @@ spawn(function()
 end)
 
 -- ==================== SEÇÕES ====================
-Section("🎭 ROLE / ESP PLAYERS")
+Section("🎭 ESP PLAYERS")
 MakeToggle("ESP Players", "ESPPlayers")
 MakeToggle("Mostrar Role", "ESPRoles")
 MakeToggle("Mostrar Nome", "ESPNames")
